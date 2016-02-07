@@ -1,0 +1,39 @@
+/* 
+	Screens
+	======================================================= */
+
+$screen-small-min: 0px;
+$screen-small-max: 400px;
+
+$screen-medium-min: 401px;
+$screen-medium-max: 800px;
+
+$screen-large-min: 801px;
+
+
+/* 
+	Columns
+	======================================================= */
+
+$column-count-l: 4;
+$column-count-m: 2;
+$column-count-s: 1;
+
+$column-gutter: 10px;
+
+
+/* 
+	Margins
+	======================================================= */
+
+$margin-default: 10px;
+
+
+/* 
+	Animation
+	======================================================= */
+
+$speed-normal: 200ms;
+$speed-fast: 150ms;
+
+$ease-default: ease-in-out;
