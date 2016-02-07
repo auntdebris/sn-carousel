@@ -22,6 +22,12 @@
 				medium: 2,
 				large: 4
 			},
+			paths: {
+				images: "images"
+			},
+			container: {
+				className: "carousel__container",
+			},
 			controls: {
 				className: "carousel__controls", 
 				display: {
@@ -72,8 +78,13 @@
 		this.element   = element;
 		this.options   = $.extend( {}, defaults, options );
 
-		this._defaults = defaults;
-		this._name     = component;
+		this._defaults     = defaults;
+		this._name         = component;
+
+		this.itemElems     = [];
+
+		this.itemTmpl      = $("#" + this.options.loadFromJSON.template).html();
+		this.itemContainer = $(this.element).find("."+this.options.container.className);
 
 		this.init();
 	}
@@ -87,12 +98,12 @@
 
 	carousel.prototype.getScreenSize = function(elem, opts){
 
-		var windowWidth = $(window).width(),
+		var windowWidth = $(window).width();
 
-			screenSize  = windowWidth >= opts.sizes.large ? "large" :
-						  windowWidth >= opts.sizes.medium ? "medium" : "small";
+		this.screenSize  = windowWidth >= opts.sizes.large  ? "large" :
+						   windowWidth >= opts.sizes.medium ? "medium" : "small";
 		
-		return screenSize;
+		return this.screenSize;
 	};
 
 	carousel.prototype.onResize = function(elem, opts){
@@ -133,7 +144,10 @@
 
 		}).done(function(data){
 
-			_.createItems(data);
+			_.items = data.data.carousel.items;
+			_.itemCount = _.items.length;
+
+			_.createItems();
 
 		}).fail(function(){
 
@@ -143,31 +157,77 @@
 
 	    	console.log( "complete" );
 		});
-
-		// getjson
-		// createitems()
 	};
 
-	carousel.prototype.createItems = function(data){
+	carousel.prototype.createItems = function(){
 
-		var _    = this,
-			tmpl = $("#"+_.options.loadFromJSON.template);
+		var _ = this,
 
-		console.log(data);
-		console.log(tmpl);
+			$item;
 
-		// get template
+		_.itemContainer.empty().append("<ul>");
 
-		// empty container
+		$.each(_.items, function(i,v){
 
-		// loop
-			// template .replace
-			// append
+			$item = replaceAll(_.itemTmpl,v);
+
+			_.itemContainer.find("ul").append( $item );
+
+			_.itemElems.push( $item );
+
+			if( i === _.items.length-1 ){
+
+				_.loadItemImages();
+				_.resizeItems();
+			}
+		});
+
+		function replaceAll(tmpl, item){
+
+			var count = 0;
+
+			// @todo: handle this more elegantly
+
+			item.linkTitle = item.title;
+			item.imgPath = _.options.paths.images;
+
+			$.each(item, function(key,value){
+
+				tmpl = tmpl.replace("{{"+key+"}}", value);
+
+				count++;
+
+				if( count === item.length-1 ){
+					return tmpl;
+				}
+			});
+			
+			return tmpl;
+		}
+	};
+
+	carousel.prototype.loadItemImages = function(){
+
+		var _ = this;
+
+		if( !_.options.lazyload ){
+
+			$.each(_.itemContainer.find("img"), function(i,v){
+
+				$(v).attr("src", $(v).data("src"));
+			});
+
+		} else {
+
+			// todo: handle lazyload
+		}
 	};
 
 	carousel.prototype.resizeItems = function(){
 
-		console.log("resizeItems");
+		var _ = this;
+
+		console.log( _.screenSize );
 	};
 
 	carousel.prototype.fitContainer = function(){

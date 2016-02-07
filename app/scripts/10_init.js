@@ -3,6 +3,7 @@
 var $carousel = $("#test-carousel"),
 
 	url       = $carousel.data("item-url"),
+	imgurl 	  = $carousel.data("item-imgurl"),
 	template  = $carousel.data("item-tmpl"),
 
 	carouselOptions = {
@@ -15,6 +16,12 @@ var $carousel = $("#test-carousel"),
 				small: 1,
 				medium: 2,
 				large: 4
+			},
+			paths: {
+				images: imgurl
+			},
+			container: {
+				className: "carousel__container",
 			},
 			controls: {
 				className: "carousel__controls", 
@@ -57,7 +64,7 @@ var $carousel = $("#test-carousel"),
 				url: url,
 				template: template
 			},
-			lazyload: true,
+			lazyload: false,
 			drag: true
 	};
 

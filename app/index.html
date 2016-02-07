@@ -18,7 +18,7 @@
 
 		<div class="page page--home">
 			
-			<div id="test-carousel" class="carousel" data-item-url="assets/test_carousel/items.json" data-item-tmpl='item-tmpl'>
+			<div id="test-carousel" class="carousel" data-item-imgurl="assets/test_carousel/" data-item-url="assets/test_carousel/items.json" data-item-tmpl='item-tmpl'>
 
 				<div class="carousel__container">
 					<ul>
@@ -98,17 +98,19 @@
 
 			<script id="item-tmpl" type="text/html">
 				
-				<article class="carousel__item">
-					<a href="{{url}}" title="{{title}}">
-						<figure class="carousel__item__img">
-							<img src="{{img}}" alt="{{alt}}">
-						</figure>
-						<h2>{{title}}</h2>
-						<div class="carousel__item__content">
-							<p>{{content}}</p>
-						</div>
-					</a>
-				</article>
+				<li>
+					<article class="carousel__item">
+						<a href="{{url}}" title="{{linkTitle}}">
+							<figure class="carousel__item__img">
+								<img src="data:" data-src="{{imgPath}}{{img}}" alt="{{alt}}">
+							</figure>
+							<h2>{{title}}</h2>
+							<div class="carousel__item__content">
+								<p>{{content}}</p>
+							</div>
+						</a>
+					</article>
+				</li>
 
 			</script>
 
