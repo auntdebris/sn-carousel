@@ -6,6 +6,10 @@
  * @author: Paula Cunha
  * @version: 1.0
  *
+ * @todo: add support for infinite carousel
+ * @todo: add support for touch
+ * @todo: add lazyload
+ *
  */
 
 ;(function ($, window, document, undefined) {
@@ -26,13 +30,17 @@
 				images: "images"
 			},
 			classes: {
-				active: "active"
+				active: "active",
+				disabled: "disabled"
 			},
 			container: {
 				className: "carousel__container"
 			},
 			controls: {
 				className: "carousel__controls", 
+				allowKeyboard: true,
+				allowDrag: true,
+				allowTouch: true,
 				display: {
 					small: true,
 					medium: true,
@@ -72,8 +80,7 @@
 				url: "",
 				template: ""
 			},
-			lazyload: true,
-			drag: true
+			lazyload: true
 		};
 
 	function carousel(element, options){
@@ -101,13 +108,26 @@
 		_.handleResize();
 	};
 
-	carousel.prototype.getScreenSize = function(){
+	carousel.prototype.isInViewport = function(){
 
 		var _ = this,
-			windowWidth = $(window).width();
 
-		_.screenSize = windowWidth >= _.options.sizes.large  ? "large" :
-					   windowWidth >= _.options.sizes.medium ? "medium" : "small";
+			wHeight = $(window).height(),
+			wScroll = $(window).scrollTop(),
+			offset  = _.element.offset().top,
+			pos     = wScroll + wHeight;
+
+		return ( pos > offset && (offset + wHeight + $elem.height() ) > pos );
+	};
+
+	carousel.prototype.getScreenSize = function(){
+
+		var _ = this;
+
+		_.windowWidth = $(window).width();
+
+		_.screenSize = _.windowWidth >= _.options.sizes.large  ? "large" :
+					   _.windowWidth >= _.options.sizes.medium ? "medium" : "small";
 		
 		return _.screenSize;
 	};
@@ -158,8 +178,7 @@
 
 		_.getItems();
 
-		// @todo: add option to load from ajax
-		// or use existing content
+		// @todo: add option to use existing content
 	};
 
 	carousel.prototype.getItems = function(){
@@ -214,11 +233,13 @@
 			}
 		});
 
+		// a tiny templating engine
+
 		function replaceAll(tmpl, item){
 
 			var count = 0;
 
-			// @todo: handle this more elegantly
+			// @todo: handle this a bit more elegantly
 
 			item.linkTitle = item.title;
 			item.imgPath = _.options.paths.images;
@@ -289,6 +310,19 @@
 
 		_.createArrows();
 		_.createDots();
+
+		if( _.options.controls.allowKeyboard ){
+
+			_.initKeyboard();
+		}
+	};
+
+	carousel.prototype.updateControls = function(){
+
+		var _ = this;
+
+		_.updateDots();
+		_.updateArrows();
 	};
 
 	carousel.prototype.createArrows = function(){
@@ -333,7 +367,17 @@
 
 		var _ = this;
 
-		// setactive
+		_.arrowPrev.removeClass(_.options.classes.disabled);
+		_.arrowNext.removeClass(_.options.classes.disabled);
+
+		if( _.currentPage === 0 ){
+
+			_.arrowPrev.addClass(_.options.classes.disabled);
+
+		} else if( _.currentPage === _.numPages-1 ){
+
+			_.arrowNext.addClass(_.options.classes.disabled);
+		}
 	};
 
 	carousel.prototype.createDots = function(){
@@ -393,34 +437,44 @@
 		});
 	};
 
+	carousel.prototype.initKeyboard = function(){
+
+		var _ = this;
+
+		$(document).on("keydown", function(e){
+
+			if( _.isInViewport(_.element) === true ){
+
+			    // left arrow: prev
+
+			    if(e.keyCode == 37) _.goToPage(_.currentPage-1);
+
+			    // right arrow: next
+
+			    if(e.keyCode == 39) _.goToPage(_.currentPage+1);
+
+			    e.preventDefault();
+			}
+		});
+	};
+
 	carousel.prototype.initVisibility = function(){
 
 		var _ = this;
 
 	};
 
-	carousel.prototype.updateVisibility = function(){
+	carousel.prototype.updateArrowVisibility = function(){
 
 		var _ = this;
 
 	};
 
-	carousel.prototype.goToPrev = function(){
+	carousel.prototype.updateDotVisibility = function(){
 
 		var _ = this;
 
-		// currentpage--
 
-		// goto(currentpage)
-	};
-
-	carousel.prototype.goToNext = function(){
-
-		var _ = this;
-
-		// currentpage++
-
-		// goto(currentpage)
 	};
 
 	carousel.prototype.goToPage = function(page){
@@ -431,9 +485,14 @@
 
 			_.currentPage = page;
 
-			_.updateDots();
+			_.updateControls();
+
+			// use translate where supported for better perfomance
 
 			if( Modernizr.csstransforms3d ){
+
+				// translate horizontally
+				// use of translate3d triggers hardware acceleration
 
 				_.itemList.css({
 					transform: "translate3d(-"+ (_.containerSize * page) + "px,0,0)"
@@ -441,15 +500,27 @@
 
 			} else if( Modernizr.csstransforms ){
 
+				// translate horizontally
+
 				_.itemList.css({
 					transform: "translateX(-"+ (_.containerSize * page) + "px)"
 				});
 
-			} else {
+			} else if( Modernizr.csstransitions ){
+
+				// transition on left property
 
 				_.itemList.css({
 					left: -(_.containerSize * page)
 				});
+
+			} else {
+
+				// use jQuery animate instead of CSS transitions
+
+				_.itemList.animate({
+					left: -(_.containerSize * page)
+				}, 400);
 			}
 		}
 	};

@@ -21,13 +21,17 @@ var $carousel = $("#test-carousel"),
 				images: imgurl
 			},
 			classes: {
-				active: "active"
+				active: "active",
+				disabled: "disabled"
 			},
 			container: {
 				className: "carousel__container",
 			},
 			controls: {
-				className: "carousel__controls", 
+				className: "carousel__controls",
+				allowKeyboard: true,
+				allowDrag: true,
+				allowTouch: true,
 				display: {
 					small: true,
 					medium: true,
@@ -67,8 +71,7 @@ var $carousel = $("#test-carousel"),
 				url: url,
 				template: template
 			},
-			lazyload: false,
-			drag: true
-	};
+			lazyload: false
+		};
 
 $carousel.carousel(carouselOptions);

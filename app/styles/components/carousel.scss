@@ -223,5 +223,17 @@
 				top: -2px;
 			}
 		}
+
+		&.disabled {
+			box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15);
+			
+			i {
+				color: $color-inactive;
+			}
+
+			&:hover {
+				cursor: default;
+			}
+		}
 	}
 }
