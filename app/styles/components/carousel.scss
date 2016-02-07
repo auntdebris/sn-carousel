@@ -4,12 +4,19 @@
 	&__container {
 		width: 100%;
 		padding: $column-gutter/2;
+		margin: -1px;
 		overflow: hidden;
 		
 		ul {
 			list-style-type: none;
 			margin: 0;
 			padding: 0;
+
+			transition: left $speed-slow $ease-default;
+			
+			.csstransforms & {
+				transition: transform $speed-slow $ease-out-quad;
+			}
 		}
 
 		li {

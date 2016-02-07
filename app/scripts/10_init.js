@@ -20,6 +20,9 @@ var $carousel = $("#test-carousel"),
 			paths: {
 				images: imgurl
 			},
+			classes: {
+				active: "active"
+			},
 			container: {
 				className: "carousel__container",
 			},

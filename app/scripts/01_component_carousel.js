@@ -25,8 +25,11 @@
 			paths: {
 				images: "images"
 			},
+			classes: {
+				active: "active"
+			},
 			container: {
-				className: "carousel__container",
+				className: "carousel__container"
 			},
 			controls: {
 				className: "carousel__controls", 
@@ -84,6 +87,8 @@
 		this.itemElems     = [];
 		this.itemTmpl      = $("#" + this.options.loadFromJSON.template).html();
 		this.itemContainer = $(this.element).find("."+this.options.container.className);
+
+		this.dots 		   = [];
 
 		this.init();
 	}
@@ -169,7 +174,7 @@
 
 			_.createItems();
 
-			_.initControls();
+			_.createControls();
 
 		}).done(function(){
 
@@ -270,16 +275,9 @@
 
 		var _ = this;
 
-		_.containerList = _.itemContainer.find("ul");
+		_.itemList = _.itemContainer.find("ul");
 
-		_.containerList.width( _.containerSize * _.numPages );
-	};
-
-	carousel.prototype.initControls = function(){
-
-		var _ = this;
-
-		_.createControls();
+		_.itemList.width( _.containerSize * _.numPages );
 	};
 
 	carousel.prototype.createControls = function(){
@@ -297,50 +295,38 @@
 
 		var _ = this;
 
-		_.arrowContainer = $("<div class="+ _.options.arrows.className +">");
-		_.arrowPrev      = $('<button class="'+ _.options.arrows.prev.className +'"><i aria-hidden="true"></i><span class="visuallyhidden">'+ _.options.arrows.prev.text +'</span></button>'),
-		_.arrowNext      = $('<button class="'+ _.options.arrows.next.className +'"><i aria-hidden="true"></i><span class="visuallyhidden">'+ _.options.arrows.next.text +'</span></button>');
+		_.arrowContainer = $("<div class=" + _.options.arrows.className +">");
+
+		_.arrowPrev      = $('<button class="' + _.options.arrows.prev.className +'"><i aria-hidden="true"></i><span class="visuallyhidden">'+ _.options.arrows.prev.text +'</span></button>');
+		_.arrowNext      = $('<button class="' + _.options.arrows.next.className +'"><i aria-hidden="true"></i><span class="visuallyhidden">'+ _.options.arrows.next.text +'</span></button>');
 
 		_.arrowContainer.append(_.arrowPrev);
 		_.arrowContainer.append(_.arrowNext);
 
 		_.controls.find("> div").append(_.arrowContainer);
-	};
 
-	carousel.prototype.createDots = function(){
-
-		var _ = this,
-
-			$dot = $('<button class="'+ _.options.dots.className +'"><i aria-hidden="true"></i><span class="visuallyhidden">'+ _.options.dots.text +'</span></button>');
-
-		// loop through dots
-		// append
+		_.initArrows();
 	};
 
 	carousel.prototype.initArrows = function(){
 
 		var _ = this;
 
-		// update()
+		_.goToPage(0);
 
-		// arrow on click(move.goToPrev)
-		// arrow on click(move.goToNext)
-	};
+		_.arrowPrev.on("click", function(){
 
-	carousel.prototype.initDots = function(){
+			page = _.currentPage-1;
 
-		var _ = this;
+			_.goToPage(page);
+		});
 
-		// update()
-		
-		// dot on click(move.goTo)
-	};
+		_.arrowNext.on("click", function(){
 
-	carousel.prototype.updateDots = function(){
+			page = _.currentPage+1;
 
-		var _ = this;
-
-		// setactive
+			_.goToPage(page);
+		});
 	};
 
 	carousel.prototype.updateArrows = function(){
@@ -348,6 +334,63 @@
 		var _ = this;
 
 		// setactive
+	};
+
+	carousel.prototype.createDots = function(){
+
+		var _ = this,
+			i = 0,
+			dot;
+
+		_.dotContainer = $("<div class=" + _.options.dots.className + ">");
+
+		while( i < _.numPages ){
+
+			dot = $('<button class="'+ _.options.dots.dot.className +'"><i aria-hidden="true"></i><span class="visuallyhidden">'+ _.options.dots.dot.text + i+1 + '</span></button>');
+			
+			_.dotContainer.append(dot);
+			_.dots.push(dot);
+
+			if( i === _.numPages-1 ){
+
+				_.controls.find("> div").append(_.dotContainer);
+				_.initDots();
+			}
+
+			i++;
+		}
+	};
+
+	carousel.prototype.initDots = function(){
+
+		var _ = this,
+			page;
+
+		_.goToPage(0);
+
+		_.dotContainer.find("button").on("click", function(){
+
+			page = $(this).index();
+
+			_.goToPage(page);
+		});
+	};
+
+	carousel.prototype.updateDots = function(){
+
+		var _ = this;
+
+		$.each(_.dots, function(i,v){
+
+			if( i === _.currentPage ){
+
+				$(v).addClass(_.options.classes.active);
+
+			} else {
+
+				$(v).removeClass(_.options.classes.active);
+			}
+		});
 	};
 
 	carousel.prototype.initVisibility = function(){
@@ -380,11 +423,35 @@
 		// goto(currentpage)
 	};
 
-	carousel.prototype.goTo = function(){
+	carousel.prototype.goToPage = function(page){
 
 		var _ = this;
 
-		// container left
+		if( page >= 0 && page < _.numPages ){
+
+			_.currentPage = page;
+
+			_.updateDots();
+
+			if( Modernizr.csstransforms3d ){
+
+				_.itemList.css({
+					transform: "translate3d(-"+ (_.containerSize * page) + "px,0,0)"
+				});
+
+			} else if( Modernizr.csstransforms ){
+
+				_.itemList.css({
+					transform: "translateX(-"+ (_.containerSize * page) + "px)"
+				});
+
+			} else {
+
+				_.itemList.css({
+					left: -(_.containerSize * page)
+				});
+			}
+		}
 	};
 
 	$.fn[component] = function ( options ) {
