@@ -75,87 +75,113 @@
 
 	function carousel(element, options){
 
-		this.element   = element;
-		this.options   = $.extend( {}, defaults, options );
+		this.element       = element;
+		this.options       = $.extend( {}, defaults, options );
 
 		this._defaults     = defaults;
 		this._name         = component;
 
 		this.itemElems     = [];
-
 		this.itemTmpl      = $("#" + this.options.loadFromJSON.template).html();
 		this.itemContainer = $(this.element).find("."+this.options.container.className);
 
 		this.init();
 	}
 
-	carousel.prototype.init = function() {
+	carousel.prototype.init = function(){
 
-		this.initItems();
+		var _ = this;
 
-		this.handleResize();
+		_.initItems();
+		_.handleResize();
 	};
 
-	carousel.prototype.getScreenSize = function(elem, opts){
+	carousel.prototype.getScreenSize = function(){
 
-		var windowWidth = $(window).width();
+		var _ = this,
+			windowWidth = $(window).width();
 
-		this.screenSize  = windowWidth >= opts.sizes.large  ? "large" :
-						   windowWidth >= opts.sizes.medium ? "medium" : "small";
+		_.screenSize = windowWidth >= _.options.sizes.large  ? "large" :
+					   windowWidth >= _.options.sizes.medium ? "medium" : "small";
 		
-		return this.screenSize;
+		return _.screenSize;
 	};
 
-	carousel.prototype.onResize = function(elem, opts){
+	carousel.prototype.getContainerSize = function(){
+
+		var _ = this;
+
+		_.containerSize = _.itemContainer.width();
+
+		return _.containerSize;
+	};
+
+	carousel.prototype.getNumCols = function(){
+
+		var _ = this;
+
+		_.numCols = _.options.itemsPerPage[_.getScreenSize()];
+
+		return _.numCols;
+	};
+
+	carousel.prototype.getNumPages = function(){
+
+		var _ = this;
+
+		_.numPages = Math.ceil(_.itemCount / _.options.itemsPerPage[_.getScreenSize()]);
+
+		return _.numPages;
+	};
+
+	carousel.prototype.handleResize = function(){
 
 		// throttle resize event
 
-		var resizeEvent = $.event.special.throttledresize ? "throttledresize" : "resize";
+		var _ = this,
+			resizeEvent = $.event.special.throttledresize ? "throttledresize" : "resize";
 
-		$(window).on(resizeEvent, { _this: this }, function(e){
-			this.handleResize();
+		$(window).on("resize", { _this: this }, function(e){
+			_.resizeItems();
+			_.resizeContainer();
 		});
-	};
-
-	carousel.prototype.handleResize = function(elem, opts){
-
-		// carousel.prototype.items.resizeItems();
-
-		// resize items (no-transition)
-		// go to slide (no-transition)
 	};
 
 	carousel.prototype.initItems = function(){
 
-		this.getItems();
+		var _ = this;
 
-		// if( ajax ) getitems()
-		// else createitems()
+		_.getItems();
+
+		// @todo: add option to load from ajax
+		// or use existing content
 	};
 
 	carousel.prototype.getItems = function(){
 
-		var _   = this,
+		var _ = this,
 			url = _.options.loadFromJSON.url;
 
-		var request = $.getJSON(url, function(){
+		var request = $.getJSON(url, function(data){
 			
-			console.log( "success" );
-
-		}).done(function(data){
-
 			_.items = data.data.carousel.items;
 			_.itemCount = _.items.length;
 
 			_.createItems();
 
+			_.initControls();
+
+		}).done(function(){
+
+			// done
+
 		}).fail(function(){
 
-			console.log( "error" );
+			// @todo: handle error
 
 		}).always(function(){
 
-	    	console.log( "complete" );
+	    	// complete
 		});
 	};
 
@@ -179,6 +205,7 @@
 
 				_.loadItemImages();
 				_.resizeItems();
+				_.resizeContainer();
 			}
 		});
 
@@ -219,7 +246,7 @@
 
 		} else {
 
-			// todo: handle lazyload
+			// @todo: handle lazyload
 		}
 	};
 
@@ -227,48 +254,72 @@
 
 		var _ = this;
 
-		console.log( _.screenSize );
+		_.containerSize = _.getContainerSize();
+		_.screenSize    = _.getScreenSize();
+		_.numCols       = _.getNumCols();
+		_.itemWidth		= _.containerSize / _.numCols;
+		_.numPages		= _.getNumPages();
+
+		$.each(_.itemContainer.find("li"), function(i,v){
+
+			$(v).width(_.itemWidth);
+		});
 	};
 
-	carousel.prototype.fitContainer = function(){
+	carousel.prototype.resizeContainer = function(){
 
-	};
+		var _ = this;
 
-	carousel.prototype.createControls = function(){
+		_.containerList = _.itemContainer.find("ul");
 
-		// createArrows
-		// initArrows()
-		
-		// createDots()
-		// initDots()
+		_.containerList.width( _.containerSize * _.numPages );
 	};
 
 	carousel.prototype.initControls = function(){
 
-		// createArrows()
-		// initArrows()
-		
-		// createDots()
-		// initDots()
+		var _ = this;
+
+		_.createControls();
+	};
+
+	carousel.prototype.createControls = function(){
+
+		var _ = this;
+
+		_.controls = $("<div class="+ _.options.controls.className +"><div></div></div>");
+		$(_.element).append(_.controls);
+
+		_.createArrows();
+		_.createDots();
 	};
 
 	carousel.prototype.createArrows = function(){
 
-		var $arrowPrev = $('<button class="'+ opts.arrows.prev.className +'"><i aria-hidden="true"></i><span class="visuallyhidden">'+ opts.arrows.prev.text +'</span></button>'),
-			$arrowNext = $('<button class="'+ opts.arrows.next.className +'"><i aria-hidden="true"></i><span class="visuallyhidden">'+ opts.arrows.next.text +'</span></button>');
+		var _ = this;
 
-		// arrow container append arrows
+		_.arrowContainer = $("<div class="+ _.options.arrows.className +">");
+		_.arrowPrev      = $('<button class="'+ _.options.arrows.prev.className +'"><i aria-hidden="true"></i><span class="visuallyhidden">'+ _.options.arrows.prev.text +'</span></button>'),
+		_.arrowNext      = $('<button class="'+ _.options.arrows.next.className +'"><i aria-hidden="true"></i><span class="visuallyhidden">'+ _.options.arrows.next.text +'</span></button>');
+
+		_.arrowContainer.append(_.arrowPrev);
+		_.arrowContainer.append(_.arrowNext);
+
+		_.controls.find("> div").append(_.arrowContainer);
 	};
 
 	carousel.prototype.createDots = function(){
 
-		var $dot = $('<button class="'+ opts.dots.className +'"><i aria-hidden="true"></i><span class="visuallyhidden">'+ opts.dots.text +'</span></button>');
+		var _ = this,
+
+			$dot = $('<button class="'+ _.options.dots.className +'"><i aria-hidden="true"></i><span class="visuallyhidden">'+ _.options.dots.text +'</span></button>');
 
 		// loop through dots
 		// append
 	};
 
 	carousel.prototype.initArrows = function(){
+
+		var _ = this;
 
 		// update()
 
@@ -278,6 +329,8 @@
 
 	carousel.prototype.initDots = function(){
 
+		var _ = this;
+
 		// update()
 		
 		// dot on click(move.goTo)
@@ -285,37 +338,51 @@
 
 	carousel.prototype.updateDots = function(){
 
+		var _ = this;
+
 		// setactive
 	};
 
 	carousel.prototype.updateArrows = function(){
+
+		var _ = this;
 
 		// setactive
 	};
 
 	carousel.prototype.initVisibility = function(){
 
+		var _ = this;
+
 	};
 
 	carousel.prototype.updateVisibility = function(){
 
+		var _ = this;
+
 	};
 
-	carousel.prototype.goToPrev = function(elem, opts){
+	carousel.prototype.goToPrev = function(){
+
+		var _ = this;
 
 		// currentpage--
 
 		// goto(currentpage)
 	};
 
-	carousel.prototype.goToNext = function(elem, opts){
+	carousel.prototype.goToNext = function(){
+
+		var _ = this;
 
 		// currentpage++
 
 		// goto(currentpage)
 	};
 
-	carousel.prototype.goTo = function(elem, opts){
+	carousel.prototype.goTo = function(){
+
+		var _ = this;
 
 		// container left
 	};
