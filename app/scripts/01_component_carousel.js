@@ -9,6 +9,7 @@
  * @todo: add support for infinite carousel
  * @todo: add support for touch
  * @todo: add lazyload
+ * @todo: proportionally reset carousel position onresize
  *
  */
 
@@ -96,7 +97,16 @@
 		this.itemTmpl      = $("#" + this.options.loadFromJSON.template).html();
 		this.itemContainer = $(this.element).find("."+this.options.container.className);
 
+		this.numPages      = [];
+		this.numCols       = [];
+
 		this.dots 		   = [];
+
+		this.currentPage   = {
+			small: 0,
+			medium: 0,
+			large: 0
+		};
 
 		this.init();
 	}
@@ -121,7 +131,14 @@
 		return ( pos > offset && (offset + wHeight + $(_.element).height() ) > pos );
 	};
 
-	carousel.prototype.getScreenSize = function(){
+	carousel.prototype.setContainerSize = function(){
+
+		var _ = this;
+
+		_.containerSize = _.itemContainer.width();
+	};
+
+	carousel.prototype.setScreenSize = function(){
 
 		var _ = this;
 
@@ -129,6 +146,34 @@
 
 		_.screenSize = _.windowWidth <= _.options.sizes.small  ? "small" :
 					   _.windowWidth <= _.options.sizes.medium ? "medium" : "large";
+	};
+
+	carousel.prototype.setNumPages = function(){
+
+		var _ = this;
+
+		$.each(_.options.itemsPerPage, function(key,v){
+
+			_.numPages[key] = Math.ceil(_.itemCount / v);
+		});
+	};
+
+	carousel.prototype.setNumCols = function(){
+
+		var _ = this;
+
+		$.each(_.options.itemsPerPage, function(key,v){
+
+			_.numCols[key] = v;
+		});
+	};
+
+
+	carousel.prototype.getScreenSize = function(){
+
+		var _ = this;
+
+		_.setScreenSize();
 		
 		return _.screenSize;
 	};
@@ -137,7 +182,7 @@
 
 		var _ = this;
 
-		_.containerSize = _.itemContainer.width();
+		_.setContainerSize();
 
 		return _.containerSize;
 	};
@@ -146,28 +191,27 @@
 
 		var _ = this;
 
-		_.numCols = _.options.itemsPerPage[_.getScreenSize()];
+		_.setNumCols();
 
-		return _.numCols;
+		return _.numCols[_.screenSize];
 	};
 
 	carousel.prototype.getNumPages = function(){
 
 		var _ = this;
 
-		_.numPages = Math.ceil(_.itemCount / _.options.itemsPerPage[_.getScreenSize()]);
+		_.setNumPages();
 
-		return _.numPages;
+		return _.numPages[_.screenSize];
 	};
 
 	carousel.prototype.handleResize = function(){
 
 		// throttle resize event
 
-		var _ = this,
-			resizeEvent = $.event.special.throttledresize ? "throttledresize" : "resize";
+		var _ = this;
 
-		$(window).on(resizeEvent, { _this: this }, function(e){
+		$(window).on("resize", { _this: this }, function(e){
 
 			_.resizeItems();
 			_.resizeContainer();
@@ -175,6 +219,13 @@
 			_.updateControlVisibility();
 
 			_.createControls();
+			_.initKeyboard();
+
+			// resetting page to 0
+			// ideally it should reposition in the same slide
+			// something like: _.goToPage( _.currentPage[_.screenSize] );
+
+			_.goToPage( 0 );
 		});
 	};
 
@@ -194,7 +245,7 @@
 
 		var request = $.getJSON(url, function(data){
 			
-			_.items = data.data.carousel.items;
+			_.items     = data.data.carousel.items;
 			_.itemCount = _.items.length;
 
 			_.createItems();
@@ -233,7 +284,7 @@
 
 			if( i === _.items.length-1 ){
 
-				_.currentPage = 0;
+				_.currentPage[_.screenSize] = 0;
 
 				_.loadItemImages();
 				_.resizeItems();
@@ -288,11 +339,12 @@
 
 		var _ = this;
 
-		_.containerSize = _.getContainerSize();
-		_.screenSize    = _.getScreenSize();
-		_.numCols       = _.getNumCols();
-		_.itemWidth		= _.containerSize / _.numCols;
-		_.numPages		= _.getNumPages();
+		_.setContainerSize();
+		_.setScreenSize();
+		_.setNumPages();
+		_.setNumCols();
+
+		_.itemWidth = _.containerSize / _.numCols[_.screenSize];
 
 		$.each(_.itemContainer.find("li"), function(i,v){
 
@@ -306,7 +358,7 @@
 
 		_.itemList = _.itemContainer.find("ul");
 
-		_.itemList.width( _.containerSize * _.numPages );
+		_.itemList.width( _.getContainerSize() * _.numPages[_.screenSize] );
 	};
 
 	carousel.prototype.createControls = function(){
@@ -364,20 +416,19 @@
 
 		var _ = this;
 
-		// _.goToPage(0);
 		_.updateArrows();
 		_.updateArrowVisibility();
 
 		_.arrowPrev.on("click", function(){
 
-			page = _.currentPage-1;
+			page = _.currentPage[_.screenSize]-1;
 
 			_.goToPage(page);
 		});
 
 		_.arrowNext.on("click", function(){
 
-			page = _.currentPage+1;
+			page = _.currentPage[_.screenSize]+1;
 
 			_.goToPage(page);
 		});
@@ -390,11 +441,11 @@
 		_.arrowPrev.removeClass(_.options.classes.disabled);
 		_.arrowNext.removeClass(_.options.classes.disabled);
 
-		if( _.currentPage === 0 ){
+		if( _.currentPage[_.screenSize] === 0 ){
 
 			_.arrowPrev.addClass(_.options.classes.disabled);
 
-		} else if( _.currentPage === _.numPages-1 ){
+		} else if( _.currentPage[_.screenSize] === _.numPages[_.screenSize]-1 ){
 
 			_.arrowNext.addClass(_.options.classes.disabled);
 		}
@@ -408,14 +459,17 @@
 
 		_.dotContainer = $("<div class=" + _.options.dots.className + ">");
 
-		while( i < _.numPages ){
+		_.dots = [];
+
+		while( i < _.numPages[_.screenSize] ){
 
 			dot = $('<button class="'+ _.options.dots.dot.className +'"><i aria-hidden="true"></i><span class="visuallyhidden">'+ _.options.dots.dot.text + i+1 + '</span></button>');
 			
 			_.dotContainer.append(dot);
+			
 			_.dots.push(dot);
 
-			if( i === _.numPages-1 ){
+			if( i === _.numPages[_.screenSize]-1 ){
 
 				_.controls.find("> div").append(_.dotContainer);
 				_.initDots();
@@ -443,15 +497,15 @@
 		});
 	};
 
-	carousel.prototype.updateDots = function(){
-
-		
+	carousel.prototype.updateDots = function(){		
 
 		var _ = this;
 
 		$.each(_.dots, function(i,v){
 
-			if( i === _.currentPage ){
+			if( i === _.currentPage[_.screenSize] ){
+
+				console.log("hi");
 
 				$(v).addClass(_.options.classes.active);
 
@@ -466,7 +520,8 @@
 
 		var _ = this;
 
-		$(document).on("keydown", function(e){
+		$(document).off("keydown.carousel-keyboard")
+				   .on("keydown.carousel-keyboard", function(e){
 
 			if( _.isInViewport(_.element) === true ){
 
@@ -474,7 +529,9 @@
 
 			    	// left arrow: prev
 
-			    	_.goToPage(_.currentPage-1);
+			    	console.log(_.currentPage[_.screenSize]-1);
+
+			    	_.goToPage(_.currentPage[_.screenSize]-1);
 
 			    	e.preventDefault();
 			    }
@@ -483,7 +540,9 @@
 			    
 			    	// right arrow: next
 
-			    	_.goToPage(_.currentPage+1);
+			    	console.log(_.currentPage[_.screenSize]+1);
+
+			    	_.goToPage(_.currentPage[_.screenSize]+1);
 
 			    	e.preventDefault();
 				}
@@ -519,10 +578,12 @@
 
 		var _ = this;
 
-		if( page >= 0 && page < _.numPages ){
+		if( page <= 0 ) page = 0;
+		if( page >= _.numPages[_.screenSize] ) page = _.numPages[_.screenSize]-1;
 
-			_.currentPage = page;
-			_.updateAllPages();
+		if( page >= 0 && page < _.numPages[_.screenSize] ){
+
+			_.currentPage[_.screenSize] = page;
 
 			_.updateControls();
 
@@ -534,7 +595,7 @@
 				// use of translate3d triggers hardware acceleration
 
 				_.itemList.css({
-					transform: "translate3d(-"+ (_.containerSize * page) + "px,0,0)"
+					transform: "translate3d(-"+ (_.containerSize * _.currentPage[_.screenSize]) + "px,0,0)"
 				});
 
 			} else if( Modernizr.csstransforms ){
@@ -542,7 +603,7 @@
 				// translate horizontally
 
 				_.itemList.css({
-					transform: "translateX(-"+ (_.containerSize * page) + "px)"
+					transform: "translateX(-"+ (_.containerSize * _.currentPage[_.screenSize]) + "px)"
 				});
 
 			} else if( Modernizr.csstransitions ){
@@ -550,7 +611,7 @@
 				// transition on left property
 
 				_.itemList.css({
-					left: -(_.containerSize * page)
+					left: -(_.containerSize * _.currentPage[_.screenSize])
 				});
 
 			} else {
@@ -558,7 +619,7 @@
 				// use jQuery animate instead of CSS transitions
 
 				_.itemList.animate({
-					left: -(_.containerSize * page)
+					left: -(_.containerSize * _.currentPage[_.screenSize])
 				}, 400);
 			}
 		}
@@ -566,10 +627,17 @@
 
 	carousel.prototype.updateAllPages = function(){
 
-		// _.currentPages[_.getScreenSize()] = _.currentPage;
+		// @todo: make this work
 
-		
-	}
+		var _ = this;
+
+		_.currentItem = _.currentPage[_.screenSize] * _.numCols[_.screenSize] + 1;
+
+		$.each(_.options.itemsPerPage, function(key,v){
+
+			_.currentPage[key] = Math.round(_.currentItem / _.numCols[key]);
+		});
+	};
 
 	$.fn[component] = function ( options ) {
 		return this.each(function () {
