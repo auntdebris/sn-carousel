@@ -26,6 +26,7 @@ var gulp         = require('gulp'),
 		styles: ['styles/app.scss'],
 		html: ['*.html'],
 		images: ['images/**/*'],
+		fonts: ['fonts/**/*'],
 		assets: ['assets/**/*'],
 		extras: ['humans.txt', 'robots.txt', 'favicon.ico'],
 	},
@@ -104,6 +105,10 @@ gulp.task('copy', ['clean'], function(){
 
 	// Vendor scripts
 	gulp.src(paths.vendor, {cwd: 'app/**'})
+		.pipe(gulp.dest(bases.dist));
+
+	// Fonts
+	gulp.src(paths.fonts, {cwd: 'app/**'})
 		.pipe(gulp.dest(bases.dist));
 
 	// Additional files
