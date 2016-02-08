@@ -22,7 +22,8 @@ var $carousel = $("#test-carousel"),
 			},
 			classes: {
 				active: "active",
-				disabled: "disabled"
+				disabled: "disabled",
+				hidden: "hidden"
 			},
 			container: {
 				className: "carousel__container",
@@ -32,7 +33,7 @@ var $carousel = $("#test-carousel"),
 				allowKeyboard: true,
 				allowDrag: true,
 				allowTouch: true,
-				display: {
+				show: {
 					small: true,
 					medium: true,
 					large: true
@@ -48,7 +49,7 @@ var $carousel = $("#test-carousel"),
 					className: "carousel__arrow carousel__arrow--next",
 					text: "Next page"
 				},
-				display: {
+				show: {
 					small: true,
 					medium: true,
 					large: true
@@ -60,8 +61,8 @@ var $carousel = $("#test-carousel"),
 					className: "carousel__dot",
 					text: "Page "
 				},
-				display: {
-					small: true,
+				show: {
+					small: false,
 					medium: true,
 					large: true
 				}

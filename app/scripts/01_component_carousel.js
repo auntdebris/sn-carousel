@@ -31,7 +31,8 @@
 			},
 			classes: {
 				active: "active",
-				disabled: "disabled"
+				disabled: "disabled",
+				hidden: "hidden"
 			},
 			container: {
 				className: "carousel__container"
@@ -41,7 +42,7 @@
 				allowKeyboard: true,
 				allowDrag: true,
 				allowTouch: true,
-				display: {
+				show: {
 					small: true,
 					medium: true,
 					large: true
@@ -57,7 +58,7 @@
 					className: "carousel__arrow carousel__arrow--next",
 					text: "Next page"
 				},
-				display: {
+				show: {
 					small: true,
 					medium: true,
 					large: true
@@ -69,8 +70,8 @@
 					className: "carousel__dot",
 					text: "Page "
 				},
-				display: {
-					small: true,
+				show: {
+					small: false,
 					medium: true,
 					large: true
 				}
@@ -114,10 +115,10 @@
 
 			wHeight = $(window).height(),
 			wScroll = $(window).scrollTop(),
-			offset  = _.element.offset().top,
+			offset  = $(_.element).offset().top,
 			pos     = wScroll + wHeight;
 
-		return ( pos > offset && (offset + wHeight + $elem.height() ) > pos );
+		return ( pos > offset && (offset + wHeight + $(_.element).height() ) > pos );
 	};
 
 	carousel.prototype.getScreenSize = function(){
@@ -126,8 +127,8 @@
 
 		_.windowWidth = $(window).width();
 
-		_.screenSize = _.windowWidth >= _.options.sizes.large  ? "large" :
-					   _.windowWidth >= _.options.sizes.medium ? "medium" : "small";
+		_.screenSize = _.windowWidth <= _.options.sizes.small  ? "small" :
+					   _.windowWidth <= _.options.sizes.medium ? "medium" : "large";
 		
 		return _.screenSize;
 	};
@@ -166,9 +167,14 @@
 		var _ = this,
 			resizeEvent = $.event.special.throttledresize ? "throttledresize" : "resize";
 
-		$(window).on("resize", { _this: this }, function(e){
+		$(window).on(resizeEvent, { _this: this }, function(e){
+
 			_.resizeItems();
 			_.resizeContainer();
+
+			_.updateControlVisibility();
+
+			_.createControls();
 		});
 	};
 
@@ -226,6 +232,8 @@
 			_.itemElems.push( $item );
 
 			if( i === _.items.length-1 ){
+
+				_.currentPage = 0;
 
 				_.loadItemImages();
 				_.resizeItems();
@@ -305,6 +313,8 @@
 
 		var _ = this;
 
+		if( _.controls ) _.controls.remove();
+
 		_.controls = $("<div class="+ _.options.controls.className +"><div></div></div>");
 		$(_.element).append(_.controls);
 
@@ -321,8 +331,16 @@
 
 		var _ = this;
 
-		_.updateDots();
 		_.updateArrows();
+		_.updateDots();
+	};
+
+	carousel.prototype.updateControlVisibility = function(){
+
+		var _ = this;
+
+		_.updateArrowVisibility();
+		_.updateDotVisibility();
 	};
 
 	carousel.prototype.createArrows = function(){
@@ -346,7 +364,9 @@
 
 		var _ = this;
 
-		_.goToPage(0);
+		// _.goToPage(0);
+		_.updateArrows();
+		_.updateArrowVisibility();
 
 		_.arrowPrev.on("click", function(){
 
@@ -410,7 +430,10 @@
 		var _ = this,
 			page;
 
-		_.goToPage(0);
+		// _.goToPage(0);
+		// _.updateControls();
+		_.updateDots();
+		_.updateDotVisibility();
 
 		_.dotContainer.find("button").on("click", function(){
 
@@ -421,6 +444,8 @@
 	};
 
 	carousel.prototype.updateDots = function(){
+
+		
 
 		var _ = this;
 
@@ -445,36 +470,49 @@
 
 			if( _.isInViewport(_.element) === true ){
 
-			    // left arrow: prev
+			    if(e.keyCode == 37){
 
-			    if(e.keyCode == 37) _.goToPage(_.currentPage-1);
+			    	// left arrow: prev
 
-			    // right arrow: next
+			    	_.goToPage(_.currentPage-1);
 
-			    if(e.keyCode == 39) _.goToPage(_.currentPage+1);
+			    	e.preventDefault();
+			    }
 
-			    e.preventDefault();
+			    if(e.keyCode == 39){
+			    
+			    	// right arrow: next
+
+			    	_.goToPage(_.currentPage+1);
+
+			    	e.preventDefault();
+				}
 			}
 		});
-	};
-
-	carousel.prototype.initVisibility = function(){
-
-		var _ = this;
-
 	};
 
 	carousel.prototype.updateArrowVisibility = function(){
 
 		var _ = this;
 
+		_.arrowContainer.removeClass(_.options.classes.hidden);
+
+		if( !_.options.arrows.show[_.getScreenSize()] ){
+
+			_.arrowContainer.addClass(_.options.classes.hidden);
+		}
 	};
 
 	carousel.prototype.updateDotVisibility = function(){
 
 		var _ = this;
 
+		_.dotContainer.removeClass(_.options.classes.hidden);
 
+		if( !_.options.dots.show[_.getScreenSize()] ){
+
+			_.dotContainer.addClass(_.options.classes.hidden);
+		}
 	};
 
 	carousel.prototype.goToPage = function(page){
@@ -484,6 +522,7 @@
 		if( page >= 0 && page < _.numPages ){
 
 			_.currentPage = page;
+			_.updateAllPages();
 
 			_.updateControls();
 
@@ -524,6 +563,13 @@
 			}
 		}
 	};
+
+	carousel.prototype.updateAllPages = function(){
+
+		// _.currentPages[_.getScreenSize()] = _.currentPage;
+
+		
+	}
 
 	$.fn[component] = function ( options ) {
 		return this.each(function () {
