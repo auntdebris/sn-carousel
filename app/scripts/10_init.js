@@ -31,8 +31,7 @@ var $carousel = $("#test-carousel"),
 			controls: {
 				className: "carousel__controls",
 				allowKeyboard: true,
-				allowDrag: true,
-				allowTouch: true,
+				allowSwipe: true,
 				show: {
 					small: true,
 					medium: true,

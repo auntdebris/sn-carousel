@@ -41,8 +41,7 @@
 			controls: {
 				className: "carousel__controls", 
 				allowKeyboard: true,
-				allowDrag: true,
-				allowTouch: true,
+				allowSwipe: true,
 				show: {
 					small: true,
 					medium: true,
@@ -373,10 +372,8 @@
 		_.createArrows();
 		_.createDots();
 
-		if( _.options.controls.allowKeyboard ){
-
-			_.initKeyboard();
-		}
+		_.initKeyboard();
+		_.initSwipe();
 	};
 
 	carousel.prototype.updateControls = function(){
@@ -481,19 +478,14 @@
 
 	carousel.prototype.initDots = function(){
 
-		var _ = this,
-			page;
+		var _ = this;
 
-		// _.goToPage(0);
-		// _.updateControls();
 		_.updateDots();
 		_.updateDotVisibility();
 
 		_.dotContainer.find("button").on("click", function(){
 
-			page = $(this).index();
-
-			_.goToPage(page);
+			_.goToPage($(this).index());
 		});
 	};
 
@@ -518,35 +510,66 @@
 
 		var _ = this;
 
-		$(document).off("keydown.carousel-keyboard")
-				   .on("keydown.carousel-keyboard", function(e){
+		if( _.options.controls.allowKeyboard ){
 
-			if( _.isInViewport(_.element) === true ){
+			$(document).off("keydown.carousel-keyboard")
+					   .on("keydown.carousel-keyboard", function(e){
 
-			    if(e.keyCode == 37){
+				if( _.isInViewport(_.element) === true ){
 
-			    	// left arrow: prev
+				    if(e.keyCode === 37){
 
-			    	console.log(_.currentPage[_.screenSize]-1);
+				    	// left arrow: prev
 
-			    	_.goToPage(_.currentPage[_.screenSize]-1);
+				    	_.goToPage(_.currentPage[_.screenSize]-1);
 
-			    	e.preventDefault();
-			    }
+				    	e.preventDefault();
+				    }
 
-			    if(e.keyCode == 39){
-			    
-			    	// right arrow: next
+				    if(e.keyCode === 39){
+				    
+				    	// right arrow: next
 
-			    	console.log(_.currentPage[_.screenSize]+1);
+				    	_.goToPage(_.currentPage[_.screenSize]+1);
 
-			    	_.goToPage(_.currentPage[_.screenSize]+1);
-
-			    	e.preventDefault();
+				    	e.preventDefault();
+					}
 				}
-			}
-		});
+			});
+		}
 	};
+
+	carousel.prototype.initSwipe = function(e){
+
+		var _ = this;
+
+		if( _.options.controls.allowSwipe && $.fn.hammer ){
+
+			$(_.itemList).hammer({ drag_lock_to_axis: true })
+						 .on("release dragleft dragright swipeleft swiperight", handleHammer);
+
+			function handleHammer(e){
+
+				e.gesture.preventDefault();
+
+		        switch(e.type) {
+		            case 'swipeleft':
+		                _.goToPage(_.currentPage[_.screenSize]+1);
+		                e.gesture.stopDetect();
+		                break;
+
+		            case 'swiperight':
+		                _.goToPage(_.currentPage[_.screenSize]-1);
+		                e.gesture.stopDetect();
+		                break;
+		        }
+		    }
+
+		} else {
+
+			console.error("Hammer.js is needed for swipe functionality");
+		}
+    };
 
 	carousel.prototype.updateArrowVisibility = function(){
 
