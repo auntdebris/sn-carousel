@@ -466,7 +466,7 @@
 			dot = $('<button class="'+ _.options.dots.dot.className +'"><i aria-hidden="true"></i><span class="visuallyhidden">'+ _.options.dots.dot.text + i+1 + '</span></button>');
 			
 			_.dotContainer.append(dot);
-			
+
 			_.dots.push(dot);
 
 			if( i === _.numPages[_.screenSize]-1 ){
@@ -504,8 +504,6 @@
 		$.each(_.dots, function(i,v){
 
 			if( i === _.currentPage[_.screenSize] ){
-
-				console.log("hi");
 
 				$(v).addClass(_.options.classes.active);
 
