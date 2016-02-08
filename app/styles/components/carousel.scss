@@ -3,7 +3,7 @@
 
 	&__container {
 		width: 100%;
-		padding: $column-gutter/2;
+		padding: 0;
 		margin: -1px;
 		overflow: hidden;
 		
@@ -90,8 +90,13 @@
 		}
 
 		h2 {
+			@extend .fa;
+			@extend .fa-angle-right;
+
 			position: relative;
 
+			font-family: $font-stack-heading;
+			font-size: 1.583em;
 			color: $color-base;
 			padding-left: 0.737em;
 
@@ -99,11 +104,11 @@
 			
 			&:before {
 				position: absolute;
-				top: -16px; left: -5px;
+				top: -6px; left: 0px;
 
-				content: '›';
-				font-family: sans-serif;
-				font-size: 2.632em;
+				// content: '›';
+				font-family: FontAwesome;
+				font-size: 30px;
 				font-weight: 200;
 				line-height: 1;
 
@@ -135,7 +140,9 @@
 	&__dots {
 		position: relative;
 		display: inline-block;
-		padding: 8px 0 0;
+		padding: 1px 0 0;
+		
+		-webkit-transform: translateY(6px);
 
 		&.hidden {
 			display: none;
@@ -182,7 +189,7 @@
 		display: block;
 		position: absolute;
 		top: 0;
-		padding: 9px 9px 0;
+		padding: 2px 9px 2px;
 		
 		font-size: 1em;
 		
@@ -200,13 +207,18 @@
 		&--prev {
 			left: -35px;
 
-			i:before { content: '‹'; }
+			i {
+				@extend .fa-angle-left;
+			}
 		}
 
 		&--next {
 			right: -35px;
 
-			i:before { content: '›'; }
+			// i:before { content: '›'; }
+			i {
+				@extend .fa-angle-right;
+			}
 		}
 
 		&:active,
@@ -216,20 +228,22 @@
 		}
 		
 		i {
+			@extend .fa;
+
 			display: inline-block;
 
-			font-family: Bitter, sans-serif;
+			// font-family: FontAwesome, sans-serif;
 			font-style: normal;
-			font-size: 30px;
+			font-size: 20px;
 			font-weight: 200;
-			line-height: 0.2em;
+			line-height: 1em;
 
 			color: $color-accent;
 
-			&:before {
-				position: relative;
-				top: -2px;
-			}
+			// &:before {
+			// 	position: relative;
+			// 	top: -2px;
+			// }
 		}
 
 		&.disabled {
