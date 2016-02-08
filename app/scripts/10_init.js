@@ -81,7 +81,7 @@ var jstest = (function(){
 
 	return {
 		init: initializer
-	}
+	};
 })( window );
 
 jstest.init();

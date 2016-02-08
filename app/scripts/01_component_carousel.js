@@ -7,9 +7,9 @@
  * @version: 1.0
  *
  * @todo: add support for infinite carousel
- * @todo: add support for touch
- * @todo: add lazyload
- * @todo: proportionally reset carousel position onresize
+ * @todo: add better support for touch
+ * @todo: add support for image lazyload
+ * @todo: remember carousel position on resize
  *
  */
 
@@ -110,6 +110,13 @@
 		this.init();
 	}
 
+	/*
+	 * Initialize the carousel, starting
+	 * with item load and window resize
+	 * handling
+	 *
+	 */
+
 	carousel.prototype.init = function(){
 
 		var _ = this;
@@ -117,6 +124,12 @@
 		_.initItems();
 		_.handleResize();
 	};
+
+	/*
+	 * Helper function that checks whether
+	 * the carousel is in view
+	 *
+	 */
 
 	carousel.prototype.isInViewport = function(){
 
@@ -130,12 +143,28 @@
 		return ( pos > offset && (offset + wHeight + $(_.element).height() ) > pos );
 	};
 
+	/*
+	 * Set container size
+	 *
+	 * This value will be used for all our
+	 * page calculations
+	 *
+	 */
+
 	carousel.prototype.setContainerSize = function(){
 
 		var _ = this;
 
 		_.containerSize = _.itemContainer.width();
 	};
+
+	/*
+	 * Set screen size
+	 *
+	 * Classify window width as small,
+	 * medium or large
+	 *
+	 */
 
 	carousel.prototype.setScreenSize = function(){
 
@@ -147,6 +176,13 @@
 					   _.windowWidth <= _.options.sizes.medium ? "medium" : "large";
 	};
 
+	/*
+	 * Set number of pages
+	 *
+	 * Set page number for all screen sizes
+	 *
+	 */
+
 	carousel.prototype.setNumPages = function(){
 
 		var _ = this;
@@ -156,6 +192,13 @@
 			_.numPages[key] = Math.ceil(_.itemCount / v);
 		});
 	};
+
+	/*
+	 * Set number of pages
+	 *
+	 * Set page number for all screen sizes
+	 *
+	 */
 
 	carousel.prototype.setNumCols = function(){
 
@@ -167,6 +210,10 @@
 		});
 	};
 
+	/*
+	 * @return {string} screen size
+	 *
+	 */
 
 	carousel.prototype.getScreenSize = function(){
 
@@ -177,6 +224,11 @@
 		return _.screenSize;
 	};
 
+	/*
+	 * @return {number} container size
+	 *
+	 */
+
 	carousel.prototype.getContainerSize = function(){
 
 		var _ = this;
@@ -185,6 +237,11 @@
 
 		return _.containerSize;
 	};
+
+	/*
+	 * @return {number} columns per page
+	 *
+	 */
 
 	carousel.prototype.getNumCols = function(){
 
@@ -195,6 +252,11 @@
 		return _.numCols[_.screenSize];
 	};
 
+	/*
+	 * @return {number} number of pages
+	 *
+	 */
+
 	carousel.prototype.getNumPages = function(){
 
 		var _ = this;
@@ -203,6 +265,11 @@
 
 		return _.numPages[_.screenSize];
 	};
+
+	/*
+	 * @return {number} number of pages
+	 *
+	 */
 
 	carousel.prototype.handleResize = function(){
 
@@ -228,42 +295,53 @@
 		});
 	};
 
+	/*
+	 * Initialize carousel items
+	 *
+	 */
+
 	carousel.prototype.initItems = function(){
 
 		var _ = this;
 
 		_.getItems();
 
-		// @todo: add option to use existing content
+		// @todo: add option to use dom content
 	};
+
+	/*
+ 	 * AJAX request
+ 	 *
+	 * Get item JSON
+	 *
+	 */
 
 	carousel.prototype.getItems = function(){
 
 		var _ = this,
-			url = _.options.loadFromJSON.url;
 
-		var request = $.getJSON(url, function(data){
+			request = $.getJSON(_.options.loadFromJSON.url, function(data){
 			
-			_.items     = data.data.carousel.items;
-			_.itemCount = _.items.length;
+				_.items     = data.data.carousel.items;
+				_.itemCount = _.items.length;
 
-			_.createItems();
+				_.createItems();
 
-			_.createControls();
+				_.createControls();
 
-		}).done(function(){
+			}).fail(function(){
 
-			// done
+				console.error("Could not retrieve content.")
 
-		}).fail(function(){
-
-			// @todo: handle error
-
-		}).always(function(){
-
-	    	// complete
-		});
+				// @todo: handle error
+			});
 	};
+
+	/*
+ 	 * Create items from template
+ 	 * and populate carousel
+	 *
+	 */
 
 	carousel.prototype.createItems = function(){
 
@@ -317,6 +395,13 @@
 		}
 	};
 
+	/*
+ 	 * Loads images
+ 	 * 
+ 	 * @todo: add support for image lazyload
+	 *
+	 */
+
 	carousel.prototype.loadItemImages = function(){
 
 		var _ = this;
@@ -333,6 +418,12 @@
 			// @todo: handle lazyload
 		}
 	};
+
+	/*
+ 	 * Resizes items according
+ 	 * to items per page
+	 *
+	 */
 
 	carousel.prototype.resizeItems = function(){
 
@@ -351,6 +442,11 @@
 		});
 	};
 
+	/*
+ 	 * Resizes item container to fit all items
+	 *
+	 */
+
 	carousel.prototype.resizeContainer = function(){
 
 		var _ = this;
@@ -360,21 +456,40 @@
 		_.itemList.width( _.getContainerSize() * _.numPages[_.screenSize] );
 	};
 
+	/*
+ 	 * Creates and appends controls to the carousel
+	 *
+	 */
+
 	carousel.prototype.createControls = function(){
 
 		var _ = this;
 
+		// remove controls if they exist
+
 		if( _.controls ) _.controls.remove();
+
+		// create and append controls
 
 		_.controls = $("<div class="+ _.options.controls.className +"><div></div></div>");
 		$(_.element).append(_.controls);
 
+		// create arrows and dots
+
 		_.createArrows();
 		_.createDots();
+
+		// initialize other navigation inputs
 
 		_.initKeyboard();
 		_.initSwipe();
 	};
+
+	/*
+ 	 * Updates carousel controls to reflect
+ 	 * current page
+	 *
+	 */
 
 	carousel.prototype.updateControls = function(){
 
@@ -384,6 +499,12 @@
 		_.updateDots();
 	};
 
+	/*
+ 	 * Show or hide controls depending
+ 	 * on user options
+	 *
+	 */
+
 	carousel.prototype.updateControlVisibility = function(){
 
 		var _ = this;
@@ -391,6 +512,11 @@
 		_.updateArrowVisibility();
 		_.updateDotVisibility();
 	};
+
+	/*
+ 	 * Create previous and next navgation
+	 *
+	 */
 
 	carousel.prototype.createArrows = function(){
 
@@ -408,6 +534,11 @@
 
 		_.initArrows();
 	};
+
+	/*
+ 	 * Create dot navigation
+	 *
+	 */
 
 	carousel.prototype.initArrows = function(){
 
@@ -431,6 +562,12 @@
 		});
 	};
 
+	/*
+ 	 * Disable arrows if page
+ 	 * is unavailable
+	 *
+	 */
+
 	carousel.prototype.updateArrows = function(){
 
 		var _ = this;
@@ -447,6 +584,11 @@
 			_.arrowNext.addClass(_.options.classes.disabled);
 		}
 	};
+
+	/*
+ 	 * Creates dotted navation
+	 *
+	 */
 
 	carousel.prototype.createDots = function(){
 
@@ -476,6 +618,11 @@
 		}
 	};
 
+	/*
+ 	 * Initilizes dotted navigation
+	 *
+	 */
+
 	carousel.prototype.initDots = function(){
 
 		var _ = this;
@@ -488,6 +635,12 @@
 			_.goToPage($(this).index());
 		});
 	};
+
+	/*
+ 	 * Updates dotted navigation
+ 	 * to reflect active page
+	 *
+	 */
 
 	carousel.prototype.updateDots = function(){		
 
@@ -505,6 +658,11 @@
 			}
 		});
 	};
+
+	/*
+ 	 * Initializes keyboard navigation
+	 *
+	 */
 
 	carousel.prototype.initKeyboard = function(){
 
@@ -539,6 +697,14 @@
 		}
 	};
 
+	/*
+ 	 * Initializes swipe navigation
+ 	 *
+ 	 * @depends: Hammer.js
+ 	 * @todo: make content follow swipe motion
+	 *
+	 */
+
 	carousel.prototype.initSwipe = function(e){
 
 		var _ = this;
@@ -571,6 +737,12 @@
 		}
     };
 
+    /*
+ 	 * Show or hide arrows depending
+ 	 * on user options
+	 *
+	 */
+
 	carousel.prototype.updateArrowVisibility = function(){
 
 		var _ = this;
@@ -583,6 +755,12 @@
 		}
 	};
 
+	/*
+ 	 * Show or hide dots depending
+ 	 * on user options
+	 *
+	 */
+
 	carousel.prototype.updateDotVisibility = function(){
 
 		var _ = this;
@@ -594,6 +772,11 @@
 			_.dotContainer.addClass(_.options.classes.hidden);
 		}
 	};
+
+	/*
+ 	 * Animate carousel
+	 *
+	 */
 
 	carousel.prototype.goToPage = function(page){
 
@@ -646,9 +829,15 @@
 		}
 	};
 
-	carousel.prototype.updateAllPages = function(){
+	/*
+ 	 * Sets current page for first slide
+ 	 * in all screen sizes
+ 	 *
+ 	 * @todo: finish this
+	 *
+	 */
 
-		// @todo: make this work
+	carousel.prototype.updateAllPages = function(){
 
 		var _ = this;
 
